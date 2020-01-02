@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Test form</title>
+    <link rel="stylesheet" href="https://bootswatch.com/4/cosmo/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+            integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+            crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+            integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+            crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+            integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+            crossorigin="anonymous"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="/js/jquery.cookie.js"></script>
+    <script src="http://gm.web-soft.com.pl/js/jquery.tmpl.js"></script>
+    <script id="alert_tmpl" type="text/html">
+        <div class="alert ${style}" role="alert">
+            ${title}
+        </div>
+    </script>
+    <script type="application/javascript">
+        var $j = jQuery.noConflict(true);
+
+        /**
+         * @author Adam Nielski
+         * @copyright Future-Soft Sp. z o.o.
+         */
+        function validIP(value) {
+            var ip="^$|([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
+                "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
+                "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
+                "([01]?\\d\\d?|2[0-4]\\d|25[0-5])((/([01]?\\d\\d?|2[0-4]\\d|25[0-5]))?)$";
+            return value.match(ip);
+        }
+
+        /**
+         * @author Adam Nielski
+         * @copyright Future-Soft Sp. z o.o.
+         */
+        function setVisible(selector, visible) {
+            document.querySelector(selector).style.display = visible ? 'block' : 'none';
+        }
+
+        /**
+         * @author Adam Nielski
+         * @copyright Future-Soft Sp. z o.o.
+         */
+        function onReady(callback) {
+            var intervalId = window.setInterval(function () {
+                if (document.getElementsByTagName('body')[0] !== undefined) {
+                    window.clearInterval(intervalId);
+                    callback.call(this);
+                }
+            }, 1000);
+        }
+
+        /**
+         * Reload data
+         * @param ip
+         * @author Adam Nielski
+         * @copyright Future-Soft Sp. z o.o.
+         */
+        function reload(ip) {
+            if (validIP(ip.val())) {
+                setVisible('#loading', true);
+                $j.ajax({
+                    url: "/api/get",
+                    type: "POST",
+                    data: JSON.stringify({
+                        "ip": ip.val()
+                    }),
+                    contentType: "application/json; charset=utf-8"
+                })
+                    .fail((jqXHR, textStatus) => {
+                        $j('div#flash').html('');
+                        $j("#alert_tmpl").tmpl({style: "alert-danger", title: jqXHR.responseText}).appendTo('div#flash');
+                        setVisible('#loading', false);
+                    })
+                    .done((res) => {
+                        $j(ip).closest('form').find('[name="zip"]').val(res.zip);
+                        $j(ip).closest('form').find('[name="country"]').val(res.country);
+                        $j(ip).closest('form').find('[name="city"]').val(res.city);
+                    })
+                    .always(() => {
+                        setVisible('#loading', false);
+                    })
+            }
+        }
+
+        onReady(function () {
+            setVisible('.container', true);
+            setVisible('#loading', false);
+        });
+    </script>
+    <style>
+        /*page loading content*/
+        body {
+            font-family: 'Alex Brush', cursive !important;
+        }
+
+        #loading {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 100;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(192, 192, 192, 0.5);
+            background-image: url("https://i.stack.imgur.com/MnyxU.gif");
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div id="flash"></div>
+    <form>
+        <div class="form-group mb-3">
+            <label for="simpleinput">Ip</label>
+            <input type="text" id="simpleinput" class="form-control" onkeyup="javascript:reload($(this))">
+        </div>
+        <div class="form-group mb-3">
+            <label for="simpleinput">Country</label>
+            <input type="text" id="simpleinput" class="form-control" name="country">
+        </div>
+        <div class="form-group mb-3">
+            <label for="simpleinput">City</label>
+            <input type="text" id="simpleinput" class="form-control" name="city">
+        </div>
+        <div class="form-group mb-3">
+            <label for="simpleinput">Zip</label>
+            <input type="text" id="simpleinput" class="form-control" name="zip">
+        </div>
+    </form>
+</div>
+<div id="loading"></div>
+<span class="d-block p-2 bg-primary text-white text-center">v1.0.0 copyright Adam Nielski</span>
+</body>
+</html>
